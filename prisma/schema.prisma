@@ -14,25 +14,22 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-model Example {
-    id String @id @default(cuid())
-}
-
 // Necessary for Next auth
 model Account {
-    id                String  @id @default(cuid())
+    id                String   @id @default(cuid())
     userId            String
     type              String
     provider          String
     providerAccountId String
-    refresh_token     String? @db.Text
-    access_token      String? @db.Text
+    refresh_token     String?  @db.Text
+    access_token      String?  @db.Text
     expires_at        Int?
     token_type        String?
     scope             String?
-    id_token          String? @db.Text
+    id_token          String?  @db.Text
     session_state     String?
-    user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+    user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    createdAt         DateTime @default(now())
 
     @@unique([provider, providerAccountId])
 }
@@ -53,6 +50,8 @@ model User {
     image         String?
     accounts      Account[]
     sessions      Session[]
+    createdAt     DateTime  @default(now())
+    plans         Plan[]
 }
 
 model VerificationToken {
@@ -61,4 +60,74 @@ model VerificationToken {
     expires    DateTime
 
     @@unique([identifier, token])
+}
+
+model Exercise {
+    id            String               @id @default(cuid())
+    equipment     Equipment?           @relation(fields: [equipmentId], references: [id])
+    equipmentId   String?
+    targetMuscles MusclesOnExercises[]
+    workouts      Workout[]
+}
+
+model Muscle {
+    id        String               @id @default(cuid())
+    name      String
+    exercises MusclesOnExercises[]
+    group     MuscleGroup
+}
+
+enum MuscleGroup {
+    CHEST
+    BACK
+    ARMS
+    ABDOMINALS
+    LEGS
+    SHOULDERS
+}
+
+model MusclesOnExercises {
+    exercise   Exercise @relation(fields: [exerciseId], references: [id])
+    exerciseId String
+    muscle     Muscle   @relation(fields: [muscleId], references: [id])
+    muscleId   String
+
+    @@id([exerciseId, muscleId])
+}
+
+model Equipment {
+    id        String     @id @default(cuid())
+    name      String
+    exercises Exercise[]
+}
+
+model Plan {
+    id       String    @id @default(cuid())
+    name     String
+    day      Day
+    notes    String
+    workouts Workout[]
+    user     User      @relation(fields: [userId], references: [id])
+    userId   String
+}
+
+model Workout {
+    id         String   @id @default(cuid())
+    plan       Plan     @relation(fields: [planId], references: [id])
+    planId     String
+    exercise   Exercise @relation(fields: [exerciseId], references: [id])
+    exerciseId String
+    reps       Int
+    sets       Int
+    weight     Float?
+}
+
+enum Day {
+    SUNDAY
+    MONDAY
+    TUESDAY
+    WEDNESDAY
+    THURSDAY
+    FRIDAY
+    SATURDAY
 }
